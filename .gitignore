@@ -2,3 +2,5 @@
 *.pyc
 env/
 venv/
+docs/_build
+rest_orm.egg-info
