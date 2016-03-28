@@ -13,8 +13,8 @@ class GoogleModel(models.AdaptedModel):
     first_item = fields.AdaptedString('[items][0]')
 
     def make_request(self, id):
-        body = http.client.get('google.com/some/endpoint').content
-        return body # {'path': {'to': {'id': 1}}}
+        body = http.client.get('google.com/some/endpoint/{}'.format(id)).content
+        return body # {'path': {'to': {'id': id}}}
 
 
 model = GoogleModel().connect(15)
