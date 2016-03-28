@@ -10,7 +10,7 @@ import http # or whatever you want to use
 
 class GoogleModel(models.AdaptedModel):
     id = fields.AdaptedInteger('[path][to][id]')
-    first_item = fields.AdaptedString([items][0])
+    first_item = fields.AdaptedString('[items][0]')
 
     def make_request(self, id):
         body = http.client.get('google.com/some/endpoint').content
