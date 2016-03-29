@@ -18,9 +18,9 @@ class FieldsTestCase(TestCase):
         value = field.deserialize([1, 2, 3])
         self.assertTrue(value == 2)
 
-    def test_validate_disallow_missing(self):
-        """Test validating a missing value when allow_missing is `False`."""
-        field = fields.AdaptedField('[x]', allow_missing=False)
+    def test_validate_required(self):
+        """Test validating a missing value when required is `True`."""
+        field = fields.AdaptedField('[x]', required=True)
         try:
             field.deserialize({'z': 1})
             self.assertTrue(False)
@@ -32,6 +32,12 @@ class FieldsTestCase(TestCase):
         field = fields.AdaptedField('[key]', missing='value')
         value = field.deserialize({'x': 1})
         self.assertTrue(value == 'value')
+
+    def test_nullable_field(self):
+        """Test skipping validation when field is `None`."""
+        field = fields.AdaptedDate('[key]', nullable=True)
+        value = field.deserialize({'key': None})
+        self.assertTrue(value is None)
 
     def test_validate_deserialized_value(self):
         """Test validating a deserialized value."""
@@ -67,9 +73,6 @@ class FieldsTestCase(TestCase):
         self.assertTrue(value is False)
 
         value = field.deserialize({'x': ''})
-        self.assertTrue(value is False)
-
-        value = field.deserialize({'x': None})
         self.assertTrue(value is False)
 
     def test_adapted_date_deserialization(self):

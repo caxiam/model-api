@@ -13,17 +13,20 @@ class AdaptedField(object):
     value retrieved.
     """
 
-    def __init__(self, path, allow_missing=True, missing=None, validate=None):
+    def __init__(self, path, missing=None, nullable=True, required=False,
+                 validate=None):
         """Key extraction strategy and settings.
 
         :param path: A formattable string path.
-        :param allow_missing: If `False`, raises an error if value is missing.
         :param missing: The default deserialization value.
+        :param nullable: If `False`, disallow `None` type values.
+        :param required: If `True`, raise an error if the key is missing.
         :param validate: A callable object.
         """
         self.path = path
-        self.allow_missing = allow_missing
         self.missing = missing
+        self.nullable = nullable
+        self.required = required
         self.validate = validate
 
     def deserialize(self, data):
@@ -35,13 +38,17 @@ class AdaptedField(object):
             return self._deserialize(data)
 
         try:
-            value = self.map_from_string(self.path, data)
+            raw_value = self.map_from_string(self.path, data)
         except (KeyError, IndexError):
-            if not self.allow_missing:
+            if self.required:
                 raise KeyError('{} not found.'.format(self.path))
             value = self.missing
+        else:
+            if raw_value is None and self.nullable:
+                value = None
+            else:
+                value = self._deserialize(raw_value)
 
-        value = self._deserialize(value)
         self._validate(value)
         return value
 
