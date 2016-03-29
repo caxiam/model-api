@@ -3,10 +3,13 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to REST ORM's documentation!
-====================================
+REST ORM
+========
+A RESTful object relational mapper.
 
-Contents:
+===========
+Quick Start
+===========
 
 .. toctree::
    :maxdepth: 2
@@ -15,6 +18,7 @@ Contents:
    quick_start
 
 
+=============
 API Reference
 =============
 
@@ -24,6 +28,7 @@ API Reference
     api
 
 
+============
 Project Info
 ============
 
@@ -34,6 +39,7 @@ Project Info
     license
 
 
+==================
 Indices and tables
 ==================
 
