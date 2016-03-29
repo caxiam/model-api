@@ -3,3 +3,4 @@ wsgiref==0.1.2
 sphinx
 sphinx-autobuild
 sphinx-rtd-theme
+-e git+https://github.com/caxiam/model-api.git#egg=Package
