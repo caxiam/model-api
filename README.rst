@@ -1,5 +1,9 @@
 REST ORM
 ========
+.. image:: https://readthedocs.org/projects/model-api/badge/?version=latest
+    :target: http://model-api.readthedocs.org/en/latest/?badge=latest
+    :alt: Documentation Status
+
 REST ORM is a library for interacting with structured data sources.
 
 .. code-block:: python
@@ -26,7 +30,7 @@ REST ORM is a library for interacting with structured data sources.
 Documentation
 =============
 
-Link to docs when they're up.
+Full documentation is available at: http://model-api.readthedocs.org/en/latest/
 
 ============
 Installation
