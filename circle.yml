@@ -1,0 +1,12 @@
+# circle.yml
+machine:
+  python:
+    version: 2.7.3
+
+checkout:
+  post:
+     - pip install -U pip setuptools virtualenv
+
+test:
+  override:
+     - nosetests -w tests/
