@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'REST ORM'
-copyright = u'2016, Colton Allen'
+copyright = u'Code Axis Inc. d/b/a Caxiam'
 author = u'Colton Allen'
 
 # The version info for the project you're documenting, acts as replacement for
