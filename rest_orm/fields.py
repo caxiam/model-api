@@ -53,9 +53,11 @@ class AdaptedField(object):
         return value
 
     def _deserialize(self, value):
+        """Return the value as it was initially parsed."""
         return value
 
     def _validate(self, value):
+        """Call the validate function reference if it exists."""
         if self.validate is not None:
             self.validate(value)
         return None
@@ -81,6 +83,7 @@ class AdaptedBoolean(AdaptedField):
     """Parse an adapted field into the boolean type."""
 
     def _deserialize(self, value):
+        """Return boolean value."""
         return bool(value)
 
 
@@ -88,10 +91,15 @@ class AdaptedDate(AdaptedField):
     """Parse an adapted field into the datetime type."""
 
     def __init__(self, *args, **kwargs):
+        """Parse an adapted field into the datetime type.
+
+        :param date_format: A valid strptime string format.
+        """
         self.date_format = kwargs.pop('date_format', '%Y-%m-%d')
         super(AdaptedDate, self).__init__(*args, **kwargs)
 
     def _deserialize(self, value):
+        """Return datetime value."""
         return datetime.strptime(value, self.date_format)
 
 
@@ -99,6 +107,7 @@ class AdaptedDecimal(AdaptedField):
     """Parse an adapted field into the decimal type."""
 
     def _deserialize(self, value):
+        """Return decimal value."""
         return Decimal(value)
 
 
@@ -106,6 +115,7 @@ class AdaptedInteger(AdaptedField):
     """Parse an adapted field into the integer type."""
 
     def _deserialize(self, value):
+        """Return integer value."""
         return int(value)
 
 
@@ -113,10 +123,15 @@ class AdaptedFunction(AdaptedField):
     """Parse an adapted field into a specified function's output."""
 
     def __init__(self, f, *args, **kwargs):
+        """Parse an adapted field into a specified function's output.
+
+        :param f: Function reference.
+        """
         self.f = f
         super(AdaptedFunction, self).__init__(*args, **kwargs)
 
     def _deserialize(self, value):
+        """Return value of a function."""
         return self.f(value)
 
 
@@ -124,6 +139,7 @@ class AdaptedList(AdaptedField):
     """Parse an adapted field into the list type."""
 
     def _deserialize(self, value):
+        """Return list value."""
         if not isinstance(value, list):
             return [value]
         return value
@@ -148,6 +164,7 @@ class AdaptedNested(AdaptedField):
         return self.nested_model
 
     def _deserialize(self, value):
+        """Return AdaptedModel value."""
         if isinstance(value, list):
             return [self.model().load(val) for val in value]
         return self.model().load(value)
@@ -157,4 +174,5 @@ class AdaptedString(AdaptedField):
     """Parse an adapted field into the string type."""
 
     def _deserialize(self, value):
+        """Return string value."""
         return str(value)

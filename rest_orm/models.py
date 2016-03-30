@@ -34,6 +34,10 @@ class AdaptedModel(BaseModel):
         pass
 
     def _do_load(self, data):
+        """Replace `AdaptedField`s with appropriately typed members.
+
+        :param data: Parsed dictionary output of JSON response data.
+        """
         for field_name in dir(self):
             field = getattr(self, field_name)
             if not isinstance(field, AdaptedField):
