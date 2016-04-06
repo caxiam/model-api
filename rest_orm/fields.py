@@ -83,7 +83,7 @@ class AdaptedField(object):
         return self._assign_from_keys(value, self.path[1:-1].split(']['), obj)
 
     def _is_integer(self, key):
-        """Determine if the key is an integer."""
+        """Return `True` if the provided key can be parsed as an integer."""
         try:
             int(key)
             return True
@@ -92,11 +92,20 @@ class AdaptedField(object):
 
     def _build_from_keys(self, keys, value):
         """Build the data structure bottom up from a set of keys."""
+        # Reversing the keys is important because it allows us to
+        # naively wrap values with the desired data-type.  We don't
+        # worry about what key to assign to.
         for key in reversed(keys):
+            # If the key is an integer, the value needs to be enclosed
+            # in a list, otherwise it is enclosed in a dictionary
             if self._is_integer(key):
+                # Because position is important for some APIs, we need
+                # to pad out the list up to the point the key is
+                # supposed to be position.
                 response = []
                 while len(response) < int(key):
                     response.append(None)
+                # We append the value at its appropriate list position.
                 response.append(value)
                 value = response
             else:
@@ -106,13 +115,26 @@ class AdaptedField(object):
     def _assign_to_position(self, position, value, array, keys=[]):
         """Assign a value to its specified list position."""
         if position < 0:
+            # We do not support assigning to the end of a list.
+            # Because the "end" of the list is entirely based on the
+            # operation's processing order, negatives are excluded from
+            # serialized.
             raise ValueError('Invalid serialization position.')
 
+        # Pad the list up to, and including, the specified list
+        # position.  This is important because this method does not
+        # append values to lists.  It instead assigns or updates
+        # existing values to the new value.
         while len(array) < position + 1:
             array.append(None)
 
+        # If the `array_value` is a padded value, we can replace it
+        # without caring about its existing value.
         array_value = array[position]
         if array_value is not None:
+            # If the value is a dictionary, we can update the dictionary
+            # with a new key, value pair.  Any other value would require
+            # us to overwrite data.
             if isinstance(array_value, dict):
                 array = [self._assign_from_keys(value, keys, array_value)]
             else:
@@ -127,24 +149,40 @@ class AdaptedField(object):
         key = keys[0]
         if isinstance(obj, dict):
             if self._is_integer(key):
+                # Dictionaries can not have integer keys.
                 raise ValueError('Object is not list-like.')
             elif key in obj:
                 if len(keys) == 1:
+                    # If the key is in the object but is also the last key
+                    # available for traversal, then an overwrite would be
+                    # necessary to continue.
                     raise ValueError('Invalid serialization target.')
+                # Recursively call the function, trimming the used key,
+                # and descending into the object by the current key.
                 obj = {key: self._assign_from_keys(value, keys[1:], obj[key])}
                 return obj
             else:
+                # If the key is not present in the dictionary, we can
+                # update the dictionary with a new set of values without
+                # worrying about overwriting data.
                 obj.update(self._build_from_keys(keys, value))
                 return obj
         elif isinstance(obj, list):
             if self._is_integer(key):
+                # Lists terminate recursive execution.  However, the
+                # `_assign_to_postition` method may call the
+                # `_assign_from_keys` method if the object contains a
+                # dictionary value at the specified position.
                 return self._assign_to_position(int(key), value, obj, keys[1:])
             else:
+                # List positions are not string like.  Someone goofed.
                 raise ValueError('Invalid serialization target.')
         elif obj is None:
+            # `None` type values are overwritten.
             obj = self._build_from_keys(keys, value)
             return obj
         else:
+            # Some value occupies the desired position.
             raise ValueError('Invalid serialization target.')
 
 
