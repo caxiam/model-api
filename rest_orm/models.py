@@ -29,6 +29,16 @@ class AdaptedModel(BaseModel):
         self.post_load()
         return self
 
+    def dump(self, data):
+        """Structure a flat dictionary into a nested output."""
+        response = {}
+        for field_name, value in data.iteritems():
+            field = getattr(self, field_name)
+            if not isinstance(field, AdaptedField):
+                continue
+            response = field.serialize(value, response)
+        return response
+
     def post_load(self):
         """Perform any model level actions after load."""
         pass
