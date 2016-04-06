@@ -38,7 +38,7 @@ class AdaptedField(object):
             return self._deserialize(data)
 
         try:
-            raw_value = self.map_from_string(self.path, data)
+            raw_value = self._map_from_string(self.path, data)
         except (KeyError, IndexError):
             if self.required:
                 raise KeyError('{} not found.'.format(self.path))
@@ -60,7 +60,7 @@ class AdaptedField(object):
             self.validate(value)
         return None
 
-    def map_from_string(self, path, data):
+    def _map_from_string(self, path, data):
         """Return nested value from the string path taken.
 
         :param path: A string path to the value.  E.g. [name][first][0].
@@ -75,6 +75,77 @@ class AdaptedField(object):
         for path in path[1:-1].split(']['):
             data = extract_by_type(path)
         return data
+
+    def serialize(self, value, obj={}):
+        """Using `path`, structure an object into the required output."""
+        if self.path is None:
+            raise ValueError('Value can not be serialized.')
+        return self._assign_from_keys(value, self.path[1:-1].split(']['), obj)
+
+    def _is_integer(self, key):
+        """Determine if the key is an integer."""
+        try:
+            int(key)
+            return True
+        except ValueError:
+            return False
+
+    def _build_from_keys(self, keys, value):
+        """Build the data structure bottom up from a set of keys."""
+        for key in reversed(keys):
+            if self._is_integer(key):
+                response = []
+                while len(response) < int(key):
+                    response.append(None)
+                response.append(value)
+                value = response
+            else:
+                value = {key: value}
+        return value
+
+    def _assign_to_position(self, position, value, array, keys=[]):
+        """Assign a value to its specified list position."""
+        if position < 0:
+            raise ValueError('Invalid serialization position.')
+
+        while len(array) < position + 1:
+            array.append(None)
+
+        array_value = array[position]
+        if array_value is not None:
+            if isinstance(array_value, dict):
+                array = [self._assign_from_keys(value, keys, array_value)]
+            else:
+                raise ValueError('Position occupied.')
+        else:
+            array[position] = self._build_from_keys(keys, value)
+
+        return array
+
+    def _assign_from_keys(self, value, keys=[], obj={}):
+        """Get or create a key, value pair."""
+        key = keys[0]
+        if isinstance(obj, dict):
+            if self._is_integer(key):
+                raise ValueError('Object is not list-like.')
+            elif key in obj:
+                if len(keys) == 1:
+                    raise ValueError('Invalid serialization target.')
+                obj = {key: self._assign_from_keys(value, keys[1:], obj[key])}
+                return obj
+            else:
+                obj.update(self._build_from_keys(keys, value))
+                return obj
+        elif isinstance(obj, list):
+            if self._is_integer(key):
+                return self._assign_to_position(int(key), value, obj, keys[1:])
+            else:
+                raise ValueError('Invalid serialization target.')
+        elif obj is None:
+            obj = self._build_from_keys(keys, value)
+            return obj
+        else:
+            raise ValueError('Invalid serialization target.')
 
 
 class AdaptedBoolean(AdaptedField):
