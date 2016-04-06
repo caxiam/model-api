@@ -3,8 +3,75 @@ from unittest import TestCase
 
 from rest_orm import errors, fields, models
 
+import pytest
 
-class FieldsTestCase(TestCase):
+
+class SerializeFieldsTestCase(TestCase):
+    """Serialization test case."""
+
+    def test_serialize_deeply_nested_field(self):
+        """Test serializing to an arbitrarily nested depth."""
+        field = fields.AdaptedField('[x][y][0][z]')
+
+        data = field.serialize('hello world')
+        self.assertTrue(data['x']['y'][0]['z'] == 'hello world')
+
+        data = field.serialize('hello world', {'x': {'y': [{'q': 'hi'}]}})
+        self.assertTrue(data['x']['y'][0]['z'] == 'hello world')
+
+    def test_serialize_exact_position_field(self):
+        """Test serializing to an exact list position."""
+        field = fields.AdaptedField('[test][1][z]')
+
+        data = field.serialize('hello world')
+        self.assertTrue(data['test'][0] is None)
+        self.assertTrue(data['test'][1]['z'] == 'hello world')
+
+        data = field.serialize('hello world', {'test': [{'q': 'a'}]})
+        self.assertTrue(data['test'][1]['z'] == 'hello world')
+
+    def test_serialize_invalid_route(self):
+        """Test serializing through a non-dict route."""
+        field = fields.AdaptedField('[x][y][0][z]')
+
+        with pytest.raises(ValueError) as excinfo:
+            field.serialize('hello world', {'x': 5})
+        assert 'Invalid serialization target.' in str(excinfo)
+
+    def test_serialize_occupied_route(self):
+        """Test serializing to an occupied endpoint."""
+        field = fields.AdaptedField('[x][z]')
+
+        with pytest.raises(ValueError) as excinfo:
+            field.serialize('hello world', {'x': {'z': 5}})
+        assert 'Invalid serialization target.' in str(excinfo)
+
+    def test_serialize_occupied_position(self):
+        """Test serializing to a non-dict occupied position."""
+        field = fields.AdaptedField('[0]')
+
+        with pytest.raises(ValueError) as excinfo:
+            field.serialize('hello world', ['test'])
+        assert 'Position occupied.' in str(excinfo)
+
+    def test_serialize_non_list_like_field(self):
+        """Test serializing a list when occupied by non-listlike value."""
+        field = fields.AdaptedField('[x][0][z]')
+        with pytest.raises(ValueError) as excinfo:
+            field.serialize('hello world', {'x': {'hello': 'world'}})
+        assert 'Object is not list-like.' in str(excinfo)
+
+    def test_serialize_negative_position(self):
+        """Test serializing a negative position coordinate."""
+        field = fields.AdaptedField('[x][-1][z]')
+
+        with pytest.raises(ValueError) as excinfo:
+            field.serialize('hello world', {'x': []})
+        assert 'Invalid serialization position.' in str(excinfo)
+
+
+class DeserializeFieldsTestCase(TestCase):
+    """Deserialization test case."""
 
     def test_deserialize_deeply_nested_field(self):
         """Test deserializing a heavily nested field."""
