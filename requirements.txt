@@ -4,3 +4,4 @@ sphinx
 sphinx-autobuild
 sphinx-rtd-theme
 -e git+https://github.com/caxiam/model-api.git#egg=Package
+pytest==2.8.0
