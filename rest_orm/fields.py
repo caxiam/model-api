@@ -34,6 +34,8 @@ class Field(object):
             value = self.map_from_string(self.path, data)
         except (KeyError, IndexError):
             value = self.missing
+        if value is None:
+            return value
         return self._deserialize(value)
 
     def _deserialize(self, value):
