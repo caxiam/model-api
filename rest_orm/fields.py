@@ -1,33 +1,26 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal as PyDecimal
 
 from rest_orm.utils import get_class
 
 
-class AdaptedField(object):
+class Field(object):
     """Flat representaion of remote endpoint's field.
 
-    `AdaptedField` and its child classes are self-destructive.  Once
+    `Field` and its child classes are self-destructive.  Once
     deserialization is complete, the instance is replaced by the typed
     value retrieved.
     """
 
-    def __init__(self, path, missing=None, nullable=True, required=False,
-                 validate=None):
+    def __init__(self, path, missing=None):
         """Key extraction strategy and settings.
 
         :param path: A formattable string path.
         :param missing: The default deserialization value.
-        :param nullable: If `False`, disallow `None` type values.
-        :param required: If `True`, raise an error if the key is missing.
-        :param validate: A callable object.
         """
         self.path = path
         self.missing = missing
-        self.nullable = nullable
-        self.required = required
-        self.validate = validate
 
     def deserialize(self, data):
         """Extract a value from the provided data object.
@@ -38,27 +31,13 @@ class AdaptedField(object):
             return self._deserialize(data)
 
         try:
-            raw_value = self.map_from_string(self.path, data)
+            value = self.map_from_string(self.path, data)
         except (KeyError, IndexError):
-            if self.required:
-                raise KeyError('{} not found.'.format(self.path))
             value = self.missing
-        else:
-            if raw_value is None and self.nullable:
-                value = None
-            else:
-                value = self._deserialize(raw_value)
-
-        self._validate(value)
-        return value
+        return self._deserialize(value)
 
     def _deserialize(self, value):
         return value
-
-    def _validate(self, value):
-        if self.validate is not None:
-            self.validate(value)
-        return None
 
     def map_from_string(self, path, data):
         """Return nested value from the string path taken.
@@ -77,50 +56,50 @@ class AdaptedField(object):
         return data
 
 
-class AdaptedBoolean(AdaptedField):
+class Boolean(Field):
     """Parse an adapted field into the boolean type."""
 
     def _deserialize(self, value):
         return bool(value)
 
 
-class AdaptedDate(AdaptedField):
+class Date(Field):
     """Parse an adapted field into the datetime type."""
 
     def __init__(self, *args, **kwargs):
         self.date_format = kwargs.pop('date_format', '%Y-%m-%d')
-        super(AdaptedDate, self).__init__(*args, **kwargs)
+        super(Date, self).__init__(*args, **kwargs)
 
     def _deserialize(self, value):
         return datetime.strptime(value, self.date_format)
 
 
-class AdaptedDecimal(AdaptedField):
+class Decimal(Field):
     """Parse an adapted field into the decimal type."""
 
     def _deserialize(self, value):
-        return Decimal(value)
+        return PyDecimal(value)
 
 
-class AdaptedInteger(AdaptedField):
+class Integer(Field):
     """Parse an adapted field into the integer type."""
 
     def _deserialize(self, value):
         return int(value)
 
 
-class AdaptedFunction(AdaptedField):
+class Function(Field):
     """Parse an adapted field into a specified function's output."""
 
     def __init__(self, f, *args, **kwargs):
         self.f = f
-        super(AdaptedFunction, self).__init__(*args, **kwargs)
+        super(Function, self).__init__(*args, **kwargs)
 
     def _deserialize(self, value):
         return self.f(value)
 
 
-class AdaptedList(AdaptedField):
+class List(Field):
     """Parse an adapted field into the list type."""
 
     def _deserialize(self, value):
@@ -129,20 +108,20 @@ class AdaptedList(AdaptedField):
         return value
 
 
-class AdaptedNested(AdaptedField):
-    """Parse an adatped field into the AdaptedModel type."""
+class Nested(Field):
+    """Parse an adatped field into the Model type."""
 
     def __init__(self, model, *args, **kwargs):
-        """Parse a list of nested objects into an AdaptedModel.
+        """Parse a list of nested objects into an Model.
 
-        :param model: AdaptedModel name or reference.
+        :param model: Model name or reference.
         """
         self.nested_model = model
-        super(AdaptedNested, self).__init__(*args, **kwargs)
+        super(Nested, self).__init__(*args, **kwargs)
 
     @property
     def model(self):
-        """Return an AdaptedModel reference."""
+        """Return an Model reference."""
         if isinstance(self.nested_model, str):
             return get_class(self.nested_model)
         return self.nested_model
@@ -153,7 +132,7 @@ class AdaptedNested(AdaptedField):
         return self.model().load(value)
 
 
-class AdaptedString(AdaptedField):
+class String(Field):
     """Parse an adapted field into the string type."""
 
     def _deserialize(self, value):
