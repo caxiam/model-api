@@ -1,119 +1,95 @@
 # -*- coding: utf-8 -*-
-from unittest import TestCase
+from decimal import Decimal, InvalidOperation
 
+from unittest import TestCase
 from rest_orm import errors, fields, models
 
 
-class FieldsTestCase(TestCase):
+class FieldTestCase(TestCase):
 
-    def test_deserialize_deeply_nested_field(self):
-        """Test deserializing a heavily nested field."""
-        field = fields.AdaptedField('[x][y][z]')
-        value = field.deserialize({'x': {'y': {'z': 'value'}}})
-        self.assertTrue(value == 'value')
-
-    def test_deserialize_list_item(self):
-        """Test deserializing a list item."""
-        field = fields.AdaptedField('[1]')
-        value = field.deserialize([1, 2, 3])
-        self.assertTrue(value == 2)
-
-    def test_validate_required(self):
-        """Test validating a missing value when required is `True`."""
-        field = fields.AdaptedField('[x]', required=True)
-        try:
-            field.deserialize({'z': 1})
-            self.assertTrue(False)
-        except KeyError:
-            self.assertTrue(True)
-
-    def test_replace_missing_value(self):
+    def test_deserialize_missing_value(self):
         """Test replacing a missing value with the specified default."""
-        field = fields.AdaptedField('[key]', missing='value')
-        value = field.deserialize({'x': 1})
+        field = fields.Field('[key]', missing='value')
+        value = field.deserialize({})
         self.assertTrue(value == 'value')
 
-    def test_nullable_field(self):
-        """Test skipping validation when field is `None`."""
-        field = fields.AdaptedDate('[key]', nullable=True)
-        value = field.deserialize({'key': None})
-        self.assertTrue(value is None)
 
-    def test_validate_deserialized_value(self):
-        """Test validating a deserialized value."""
-        def validate_input(value):
-            if value > 10:
-                return
-            raise errors.AdapterError('Invalid value.')
+class BooleanTestCase(TestCase):
 
-        field = fields.AdaptedField('[x]', validate=validate_input)
+    def test_deserialize_value(self):
+        field = fields.Boolean('[key]')
+        value = field.deserialize({'key': 1})
+        self.assertTrue(value is True)
+
+
+class DateTestCase(TestCase):
+
+    def test_deserialize_value(self):
+        field = fields.Date('[key]')
+        value = field.deserialize({'key': '2015-01-31'})
+        self.assertTrue(value.year == 2015)
+        self.assertTrue(value.month == 1)
+        self.assertTrue(value.day == 31)
+
+    def test_deserialize_formatted_value(self):
+        field = fields.Date('[key]', date_format='%m/%d/%Y')
+        value = field.deserialize({'key': '01/31/2015'})
+        self.assertTrue(value.year == 2015)
+        self.assertTrue(value.month == 1)
+        self.assertTrue(value.day == 31)
+
+    def test_deserialize_invalid_value(self):
         try:
-            field.deserialize({'x': 5})
+            fields.Date('[key]').deserialize({'key': 'AB'})
             self.assertTrue(False)
-        except errors.AdapterError:
+        except ValueError:
             self.assertTrue(True)
 
-        value = field.deserialize({'x': 11})
-        self.assertTrue(value == 11)
 
-    def test_adapted_boolean_deserialization(self):
-        """Test deserializing boolean field."""
-        field = fields.AdaptedBoolean('[x]')
+class DecimalTestCase(TestCase):
 
-        value = field.deserialize({'x': 1})
-        self.assertTrue(value is True)
+    def test_deserialize_value(self):
+        field = fields.Decimal('[key]')
+        value = field.deserialize({'key': '10.50'})
+        self.assertTrue(value == Decimal('10.50'))
 
-        value = field.deserialize({'x': 'hello'})
-        self.assertTrue(value is True)
+    def test_deserialize_invalid_value(self):
+        try:
+            fields.Decimal('[key]').deserialize({'key': 'AB'})
+            self.assertTrue(False)
+        except InvalidOperation:
+            self.assertTrue(True)
 
-        value = field.deserialize({'x': True})
-        self.assertTrue(value is True)
 
-        value = field.deserialize({'x': 0})
-        self.assertTrue(value is False)
+class IntegerTestCase(TestCase):
 
-        value = field.deserialize({'x': ''})
-        self.assertTrue(value is False)
+    def test_deserialize_value(self):
+        field = fields.Integer('[key]')
+        value = field.deserialize({'key': '10'})
+        self.assertTrue(value == 10)
 
-    def test_adapted_date_deserialization(self):
-        """Test deserializing date field."""
-        field = fields.AdaptedDate('[x]')
-        value = field.deserialize({'x': '2015-01-01'})
-        self.assertTrue(value.year == 2015)
-        self.assertTrue(value.month == 1)
-        self.assertTrue(value.day == 1)
+    def test_deserialize_invalid_value(self):
+        try:
+            fields.Integer('[key]').deserialize({'key': 'AB'})
+            self.assertTrue(False)
+        except ValueError:
+            self.assertTrue(True)
 
-        field = fields.AdaptedDate('[x]', date_format='%m/%d/%Y')
-        value = field.deserialize({'x': '01/01/2015'})
-        self.assertTrue(value.year == 2015)
-        self.assertTrue(value.month == 1)
-        self.assertTrue(value.day == 1)
 
-    def test_adapted_decimal_deserialization(self):
-        """Test deserializing decimal field."""
-        from decimal import Decimal
-
-        field = fields.AdaptedDecimal('[x]')
-        value = field.deserialize({'x': '12.50'})
-
-        self.assertTrue(value == 12.50)
-        self.assertTrue(isinstance(value, Decimal))
-
-    def test_adapted_integer_deserialization(self):
-        """Test deserializing integer field."""
-        field = fields.AdaptedInteger('[x]')
-        value = field.deserialize({'x': '1'})
-        self.assertTrue(value == 1)
+class FunctionTestCase(TestCase):
 
     def test_adapted_function_deserialization(self):
         """Test deserializing function field."""
-        field = fields.AdaptedFunction(lambda x: 'value', path='[x]')
+        field = fields.Function(lambda x: 'value', path='[x]')
         value = field.deserialize({'x': 'anything'})
         self.assertTrue(value == 'value')
 
-    def test_adapted_list_deserialization(self):
+
+class ListTestCase(TestCase):
+
+    def test_deserialize_value(self):
         """Test deserializing list field."""
-        field = fields.AdaptedList('[x]')
+        field = fields.List('[x]')
 
         value = field.deserialize({'x': 1})
         self.assertTrue(value == [1])
@@ -121,19 +97,32 @@ class FieldsTestCase(TestCase):
         value = field.deserialize({'x': ['hi']})
         self.assertTrue(value == ['hi'])
 
-    def test_adapted_nested_deserialization(self):
+    def test_deserialize_value_from_position(self):
+        """Test deserializing a list item."""
+        field = fields.Field('[1]')
+        value = field.deserialize([1, 2, 3])
+        self.assertTrue(value == 2)
+
+
+class NestedTestCase(TestCase):
+
+    def test_deserialize_value(self):
         """Test deserializing nested field."""
-        class Test(models.AdaptedModel):
-            number = fields.AdaptedInteger('[y]')
+        class Test(models.Model):
+            number = fields.Integer('[y]')
 
-        field = fields.AdaptedNested(Test, path='[x]')
+        field = fields.Nested(Test, path='[x]')
         value = field.deserialize({'x': {'y': 1}})
-        self.assertTrue(isinstance(value, Test))
-        self.assertTrue(value.number == 1)
+        self.assertTrue(isinstance(value, dict))
+        self.assertIn('number', value)
+        self.assertTrue(value['number'] == 1)
 
-    def test_adapted_string_deserialization(self):
+
+class StringTestCase(TestCase):
+
+    def test_deserialize_value(self):
         """Test deserializing string field."""
-        field = fields.AdaptedString('[x]')
+        field = fields.String('[x]')
 
         value = field.deserialize({'x': 1})
         self.assertTrue(value == '1')
