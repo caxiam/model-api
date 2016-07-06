@@ -46,6 +46,14 @@ class DateTestCase(TestCase):
             self.assertTrue(True)
 
 
+class DumpTestCase(TestCase):
+
+    def test_deserialize_value(self):
+        field = fields.Dump('value')
+        value = field.deserialize({})
+        self.assertTrue(value == 'value')
+
+
 class DecimalTestCase(TestCase):
 
     def test_deserialize_value(self):

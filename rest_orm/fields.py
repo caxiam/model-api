@@ -76,6 +76,16 @@ class Date(Field):
         return datetime.strptime(value, self.date_format)
 
 
+class Dump(Field):
+    """Return a pre-determined value."""
+
+    def __init__(self, value):
+        self.value = value
+
+    def deserialize(self, data):
+        return self.value
+
+
 class Decimal(Field):
     """Parse an adapted field into the decimal type."""
 
