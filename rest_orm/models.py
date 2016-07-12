@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from copy import copy
+
 from rest_orm.fields import Field
 from rest_orm.utils import ModelRegistry
 
@@ -25,7 +27,7 @@ class Model(BaseModel):
             field = getattr(self, field_name)
             if not isinstance(field, Field):
                 continue
-            response[field_name] = field.deserialize(data)
+            response[field_name] = copy(field.deserialize(data))
 
         response = self.post_load(response)
         return response
