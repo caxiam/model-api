@@ -7,7 +7,13 @@ from rest_orm.utils import ModelRegistry
 import json
 
 
-class Model(metaclass=ModelRegistry):
+class BaseModel(object):
+    """Base model class responsible for registering child classes."""
+
+    __metaclass__ = ModelRegistry
+
+
+class Model(BaseModel):
     """A flat representation of a single remote endpoint."""
 
     def loads(self, data):

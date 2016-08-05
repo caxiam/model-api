@@ -4,4 +4,3 @@ env/
 venv/
 docs/_build
 rest_orm.egg-info
-.python-version
