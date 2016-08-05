@@ -119,7 +119,7 @@ class NestedTestCase(TestCase):
         class Test(models.Model):
             number = fields.Integer('[y]')
 
-        field = fields.Nested(Test, path='[x]')
+        field = fields.Nested('Test', path='[x]')
         value = field.deserialize({'x': {'y': 1}})
         self.assertTrue(isinstance(value, dict))
         self.assertIn('number', value)
