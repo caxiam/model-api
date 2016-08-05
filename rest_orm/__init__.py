@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
-import errors
-import fields
-import models
+from rest_orm import errors
+from rest_orm import fields
+from rest_orm import models
