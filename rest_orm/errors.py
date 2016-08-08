@@ -4,4 +4,5 @@
 class AdapterError(Exception):
     """Unreachable endpoint error."""
 
-    pass
+    def __init__(self, message):
+        self.message = message
